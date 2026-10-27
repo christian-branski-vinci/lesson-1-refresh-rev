@@ -1,4 +1,3 @@
-import App from '../App';
 import type { Expense } from '../types/Expense';
 import { useCallback, useEffect, useState } from "react";
 
