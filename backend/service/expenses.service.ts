@@ -1,15 +1,30 @@
 import fs from "fs";
 import type { Expense, NewExpense } from "../types/Expense.ts";
+import { db } from "../src/prisma/db.ts";
 
 export class ExpenseService {
     private static dataPath = "./data/expenses.json";
     private static resetPath = "./data/expenses.init.json"
 
-    public static getExpenses(): Expense[]{
-        return this.readExpenses()
+    public static async getExpenses(): Promise<Expense[]>{
+        try {
+            const rows = await db.orm.public.Expense.all()
+            const expenses = rows.map((row: any)=>({
+                id: row.id.toString(),
+                date: row.date,
+                amount: row.amount,
+                description: row.description,
+                payer: row.payer
+            }));
+            return expenses;
+        }catch (err){
+            console.error(err)
+            throw err;
+        }
     }
 
-    public static addExpense(newExpense: NewExpense): Expense[]{
+    public static async addExpense(newExpense: NewExpense): Promise<Expense>{
+        /** 
         const expenses = this.readExpenses();
         const expense: Expense = {
             ... newExpense,
@@ -18,9 +33,23 @@ export class ExpenseService {
         expenses.push(expense);
         this.saveExpenses(expenses);
         return expenses
+        */
+       try{
+            const expense = await db.orm.public.Expense.create(newExpense);
+            return {
+                id: expense.id.toString(),
+                date: expense.date,
+                amount: expense.amount,
+                description: expense.description,
+                payer: expense.payer,
+            }
+       }catch (err){
+            console.error(err)
+            throw err;
+        }
     }
     
-
+/*
     public static resetExpenses(): Expense[] {
         this._resetExpenses();
         return this.readExpenses();
@@ -56,4 +85,5 @@ export class ExpenseService {
             throw error;
         }
     }
+    */
 }
