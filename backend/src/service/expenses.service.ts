@@ -1,6 +1,6 @@
 import fs from "fs";
 import type { Expense, NewExpense } from "../types/Expense.ts";
-import { db } from "../src/prisma/db.ts";
+import { db } from "../prisma/db.ts";
 
 export class ExpenseService {
     private static dataPath = "./data/expenses.json";
@@ -45,6 +45,30 @@ export class ExpenseService {
             }
        }catch (err){
             console.error(err)
+            throw err;
+        }
+    }
+
+    private static initialExpenses = [
+    { date: "2025-01-16", description: "Example expense #1 from Alice", payer: "Alice", amount: 25.5 },
+    { date: "2025-01-15", description: "Example expense #2 from Bob", payer: "Bob", amount: 35 },
+    { date: "2025-01-15", description: "Example expense #3 from Alice", payer: "Alice", amount: 2 },
+    ];
+
+    public static async resetExpenses(): Promise<Expense[]> {
+        try {
+            const rows = await db.orm.public.Expense.all();
+            for (const row of rows) {
+                await db.orm.public.Expense.where({ id: row.id }).delete();
+            }   
+            
+            for (const e of this.initialExpenses) {
+                await db.orm.public.Expense.create(e);
+            }
+
+            return await this.getExpenses();
+        } catch (err) {
+            console.error(err);
             throw err;
         }
     }

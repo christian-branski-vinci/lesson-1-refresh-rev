@@ -23,7 +23,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'47500089b4baf6c61d6abeb9282af8f71cbe2b7d0100d51bdcbeb9b95aadf219'>;
+  StorageHashBase<'b31c0cdda34f8a3007f23ad411cab149d371c3b906002268192171b765904468'>;
 export type ExecutionHash = ExecutionHashBase<string>;
 export type ProfileHash =
   ProfileHashBase<'3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2'>;
@@ -274,14 +274,48 @@ export namespace Models {
     date: FieldOutputTypes['public']['Expense']['date'];
     description: FieldOutputTypes['public']['Expense']['description'];
     id: FieldOutputTypes['public']['Expense']['id'];
-    payer: FieldOutputTypes['public']['Expense']['payer'];
-    readonly [RelationKeys]?: never;
+    payerId: FieldOutputTypes['public']['Expense']['payerId'];
+    participants: public_User[];
+    payer: public_User;
+    readonly [RelationKeys]?: 'participants' | 'payer';
+  };
+  export type public_Participations = {
+    expenseId: FieldOutputTypes['public']['Participations']['expenseId'];
+    userId: FieldOutputTypes['public']['Participations']['userId'];
+    expense: public_Expense;
+    user: public_User;
+    readonly [RelationKeys]?: 'expense' | 'user';
+  };
+  export type public_Transfer = {
+    amount: FieldOutputTypes['public']['Transfer']['amount'];
+    date: FieldOutputTypes['public']['Transfer']['date'];
+    id: FieldOutputTypes['public']['Transfer']['id'];
+    sourceId: FieldOutputTypes['public']['Transfer']['sourceId'];
+    targetId: FieldOutputTypes['public']['Transfer']['targetId'];
+    source: public_User;
+    target: public_User;
+    readonly [RelationKeys]?: 'source' | 'target';
+  };
+  export type public_User = {
+    bankAccount: FieldOutputTypes['public']['User']['bankAccount'];
+    email: FieldOutputTypes['public']['User']['email'];
+    id: FieldOutputTypes['public']['User']['id'];
+    name: FieldOutputTypes['public']['User']['name'];
+    paidExpenses: public_Expense[];
+    participatedExpenses: public_Expense[];
+    transfersIn: public_Transfer[];
+    transfersOut: public_Transfer[];
+    readonly [RelationKeys]?:
+      'paidExpenses' | 'participatedExpenses' | 'transfersIn' | 'transfersOut';
   };
 }
 
 export declare const models: {
   public: {
     Expense: Models.public_Expense;
+    Participations: Models.public_Participations;
+    Transfer: Models.public_Transfer;
+    User: Models.public_User;
   };
 };
 
@@ -334,7 +368,202 @@ type ContractBase = Omit<
                   };
                   readonly many: false;
                 };
-                readonly payer: {
+                readonly payerId: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [];
+              indexes: readonly [
+                {
+                  readonly name: 'Expense_payerId_idx_3d3ae95d';
+                  readonly prefix: 'Expense_payerId_idx';
+                  readonly columns: readonly ['payerId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'Expense';
+                    readonly columns: readonly ['payerId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'User';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
+            readonly Participations: {
+              columns: {
+                readonly expenseId: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly userId: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['expenseId', 'userId'] };
+              uniques: readonly [];
+              indexes: readonly [
+                {
+                  readonly name: 'Participations_expenseId_idx_69d413fa';
+                  readonly prefix: 'Participations_expenseId_idx';
+                  readonly columns: readonly ['expenseId'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'Participations_userId_idx_a489d58a';
+                  readonly prefix: 'Participations_userId_idx';
+                  readonly columns: readonly ['userId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'Participations';
+                    readonly columns: readonly ['expenseId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'Expense';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'Participations';
+                    readonly columns: readonly ['userId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'User';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
+            readonly Transfer: {
+              columns: {
+                readonly amount: {
+                  readonly dataType: 'pg/float8';
+                  readonly codecId: 'pg/float8@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly date: {
+                  readonly dataType: 'pg/timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                  readonly many: false;
+                };
+                readonly id: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'function';
+                    readonly expression: 'autoincrement()';
+                  };
+                  readonly many: false;
+                };
+                readonly sourceId: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly targetId: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [];
+              indexes: readonly [
+                {
+                  readonly name: 'Transfer_sourceId_idx_d92a2571';
+                  readonly prefix: 'Transfer_sourceId_idx';
+                  readonly columns: readonly ['sourceId'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'Transfer_targetId_idx_9852d518';
+                  readonly prefix: 'Transfer_targetId_idx';
+                  readonly columns: readonly ['targetId'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'Transfer';
+                    readonly columns: readonly ['sourceId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'User';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'Transfer';
+                    readonly columns: readonly ['targetId'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'User';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
+            readonly User: {
+              columns: {
+                readonly bankAccount: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                  readonly many: false;
+                };
+                readonly email: {
+                  readonly dataType: 'pg/text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly many: false;
+                };
+                readonly id: {
+                  readonly dataType: 'pg/int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'function';
+                    readonly expression: 'autoincrement()';
+                  };
+                  readonly many: false;
+                };
+                readonly name: {
                   readonly dataType: 'pg/text';
                   readonly codecId: 'pg/text@1';
                   readonly nullable: false;
@@ -342,7 +571,7 @@ type ContractBase = Omit<
                 };
               };
               primaryKey: { readonly columns: readonly ['id'] };
-              uniques: readonly [];
+              uniques: readonly [{ readonly columns: readonly ['email'] }];
               indexes: readonly [];
               foreignKeys: readonly [];
             };
@@ -358,6 +587,12 @@ type ContractBase = Omit<
   readonly targetFamily: 'sql';
   readonly roots: {
     readonly Expense: { readonly namespace: 'public' & NamespaceId; readonly model: 'Expense' };
+    readonly Participations: {
+      readonly namespace: 'public' & NamespaceId;
+      readonly model: 'Participations';
+    };
+    readonly Transfer: { readonly namespace: 'public' & NamespaceId; readonly model: 'Transfer' };
+    readonly User: { readonly namespace: 'public' & NamespaceId; readonly model: 'User' };
   };
   readonly domain: {
     readonly namespaces: {
@@ -384,12 +619,37 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
-              readonly payer: {
+              readonly payerId: {
                 readonly nullable: false;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
             };
-            readonly relations: Record<string, never>;
+            readonly relations: {
+              readonly participants: {
+                readonly to: { readonly namespace: 'public' & NamespaceId; readonly model: 'User' };
+                readonly cardinality: 'N:M';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['expenseId'];
+                };
+                readonly through: {
+                  readonly table: 'Participations';
+                  readonly namespaceId: 'public';
+                  readonly parentColumns: readonly ['expenseId'];
+                  readonly childColumns: readonly ['userId'];
+                  readonly targetColumns: readonly ['id'];
+                };
+              };
+              readonly payer: {
+                readonly to: { readonly namespace: 'public' & NamespaceId; readonly model: 'User' };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['payerId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
             readonly storage: {
               readonly table: 'Expense';
               readonly namespaceId: 'public';
@@ -398,7 +658,191 @@ type ContractBase = Omit<
                 readonly date: { readonly column: 'date' };
                 readonly description: { readonly column: 'description' };
                 readonly id: { readonly column: 'id' };
-                readonly payer: { readonly column: 'payer' };
+                readonly payerId: { readonly column: 'payerId' };
+              };
+            };
+          };
+          readonly Participations: {
+            readonly fields: {
+              readonly expenseId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly userId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+            };
+            readonly relations: {
+              readonly expense: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Expense';
+                };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['expenseId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly user: {
+                readonly to: { readonly namespace: 'public' & NamespaceId; readonly model: 'User' };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['userId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'Participations';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly expenseId: { readonly column: 'expenseId' };
+                readonly userId: { readonly column: 'userId' };
+              };
+            };
+          };
+          readonly Transfer: {
+            readonly fields: {
+              readonly amount: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/float8@1' };
+              };
+              readonly date: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly sourceId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly targetId: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+            };
+            readonly relations: {
+              readonly source: {
+                readonly to: { readonly namespace: 'public' & NamespaceId; readonly model: 'User' };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['sourceId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly target: {
+                readonly to: { readonly namespace: 'public' & NamespaceId; readonly model: 'User' };
+                readonly cardinality: 'N:1';
+                readonly nullable: false;
+                readonly on: {
+                  readonly localFields: readonly ['targetId'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'Transfer';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly amount: { readonly column: 'amount' };
+                readonly date: { readonly column: 'date' };
+                readonly id: { readonly column: 'id' };
+                readonly sourceId: { readonly column: 'sourceId' };
+                readonly targetId: { readonly column: 'targetId' };
+              };
+            };
+          };
+          readonly User: {
+            readonly fields: {
+              readonly bankAccount: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly email: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly name: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+            };
+            readonly relations: {
+              readonly paidExpenses: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Expense';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['payerId'];
+                };
+              };
+              readonly participatedExpenses: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Expense';
+                };
+                readonly cardinality: 'N:M';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['userId'];
+                };
+                readonly through: {
+                  readonly table: 'Participations';
+                  readonly namespaceId: 'public';
+                  readonly parentColumns: readonly ['userId'];
+                  readonly childColumns: readonly ['expenseId'];
+                  readonly targetColumns: readonly ['id'];
+                };
+              };
+              readonly transfersIn: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Transfer';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['targetId'];
+                };
+              };
+              readonly transfersOut: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Transfer';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['sourceId'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'User';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly bankAccount: { readonly column: 'bankAccount' };
+                readonly email: { readonly column: 'email' };
+                readonly id: { readonly column: 'id' };
+                readonly name: { readonly column: 'name' };
               };
             };
           };

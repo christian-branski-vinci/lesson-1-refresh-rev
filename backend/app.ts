@@ -1,7 +1,7 @@
 import express from 'express';
 import logger from 'morgan';
 import cors from 'cors';
-import expensesRouter from './routes/expenses.router.ts';
+import expensesRouter from './src/routes/expenses.router.ts';
 
 const app = express();
 

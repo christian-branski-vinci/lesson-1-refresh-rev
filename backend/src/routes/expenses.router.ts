@@ -1,6 +1,7 @@
 import express from "express";
 import type { Expense } from "../types/Expense.ts";
 import { ExpenseService } from "../service/expenses.service.ts";
+import { isValidNewExpense } from "../guards/expenses.guard.ts";
 
 const expensesRouter = express.Router();
 
@@ -16,18 +17,18 @@ expensesRouter.get("/",async (req, res) => {
 expensesRouter.post("/", async (req, res) => {
     try {
         const expense: Expense = req.body;
-        /** 
-        if (!isValidExpense(expense)) {
+         
+        if (!isValidNewExpense(expense)) {
             return res.status(400).json({ error: "Invalid expense data" });
         }
-        */
+
         const expenses = await ExpenseService.addExpense(expense);
         res.status(201).json(expenses);
     } catch (error) {
         res.status(500).json({ error: "Server Error" });
     }
 });
-/*
+
 expensesRouter.post("/reset", (req, res)=> {
     try {
         const expenses = ExpenseService.resetExpenses();
@@ -36,6 +37,6 @@ expensesRouter.post("/reset", (req, res)=> {
         res.status(500).json({error: "server Error"})
     }
 })
-    */
+
 
 export default expensesRouter;
