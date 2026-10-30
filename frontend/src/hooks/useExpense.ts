@@ -1,4 +1,4 @@
-import type { Expense } from '../types/Expense';
+import type { Expense, newExpense } from '../types/Expense';
 import { useCallback, useEffect, useState } from "react";
 
 
@@ -8,7 +8,7 @@ interface UseExpensesResult {
   expenses: Expense[];
   loading: boolean;
   error: string | null;
-  addExpense: (expense: Expense) => Promise<void>;
+  addExpense: (expense: newExpense) => Promise<void>;
   resetExpenses: () => Promise<void>;
 }
 
@@ -48,7 +48,7 @@ function useExpenses():UseExpensesResult{
 
 
     const addExpense= useCallback(
-        async(expense: Expense) =>{
+        async(expense: newExpense) =>{
             try{
                 setError(null)
                 const response = await fetch(`${API_BASE_URL}/expenses`,{
