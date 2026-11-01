@@ -16,9 +16,12 @@ function ExpenseAdd({ addExpense }: ExpenseItemProps) {
     const onSubmit =async (data: ExpenseFormValues) => {
         const newExpense: newExpense={
             description: data.description,
-            payer: data.payer,
+            payerId: data.payerId,
             amount: data.amount,
-            date: data.date
+            date: data.date,
+            participants: 
+            data.participantsRaw 
+            ? data.participantsRaw.split(',').map((s)=> parseInt(s.trim(), 10)).filter((n)=> !isNaN(n)) :[]
         }
         await addExpense(newExpense);
         reset()
@@ -32,12 +35,8 @@ function ExpenseAdd({ addExpense }: ExpenseItemProps) {
                 <input type="text" {...register("description")} placeholder="Description"/>
                 {errors.description && <span>{errors.description.message}</span>}
 
-                <select {...register("payer")}>
-                    <option value="">Choisir un payeur</option>
-                    <option value="Alice">Alice</option>
-                    <option value="Bob">Bob</option>
-                </select>
-                {errors.payer && <span>{errors.payer.message}</span>}
+                <input type="number" {...register("payerId", {valueAsNumber : true})} placeholder="Payer Id" />
+                {errors.payerId && <span>{errors.payerId.message}</span>}
 
                 <input type="number" step="0.01" {...register("amount", { valueAsNumber: true })} placeholder="Amount" />
                 {errors.amount && <span>{errors.amount.message}</span>}
@@ -45,6 +44,9 @@ function ExpenseAdd({ addExpense }: ExpenseItemProps) {
                 <input type="text" {...register("date")} placeholder="Date"/>
                 {errors.date && <span>{errors.date.message}</span>}
 
+                <input type="text" {...register("participantsRaw")} placeholder="particiapant ID's (separé par virgule)"/>
+                {errors.participantsRaw && <span>{errors.participantsRaw.message}</span>}
+                
                 <button type = "submit" className="btn btn-primary">Add</button>
             </form>
         </div>
