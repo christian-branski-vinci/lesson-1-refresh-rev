@@ -16,6 +16,7 @@ interface UseExpensesResult {
 export interface ExpenseFilter {
   amount?: number;
   payerId?: number | string;
+  categoryId?: number | string;
 }
 function errorMessage(error: unknown): string {
     return error instanceof Error ? error.message : 'Unknown error';

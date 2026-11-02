@@ -1,11 +1,14 @@
 import { useForm } from "react-hook-form";
 import type { ExpenseFilter } from "../hooks/useExpense"; 
 import useUsers from "../hooks/useUsers";
+import useCategories from "../hooks/useCategories";
 
 function ExpenseSearch({ searchExpenses }: { searchExpenses: (filter?: ExpenseFilter) => Promise<void> }) {
 
     const {register, handleSubmit} = useForm<ExpenseFilter>();
     const { users } = useUsers();
+    const { categories } = useCategories();
+    
 
     const onSubmit = async (data: ExpenseFilter) =>{
         await searchExpenses(data);
@@ -25,6 +28,16 @@ function ExpenseSearch({ searchExpenses }: { searchExpenses: (filter?: ExpenseFi
                         <option key= {user.id} value={user.id}>{user.name}</option>
                     ))}
                 </select>
+
+                <label htmlFor="categoryId">Category</label>
+                    <select id="categoryId" {...register("categoryId")}>
+                        <option value="">All categories</option>
+                        {categories.map((category) => (
+                        <option key={category.id} value={category.id}>
+                            {category.name}
+                        </option>
+                        ))}
+                    </select>
 
                 <button type="submit">search</button>
             </form>

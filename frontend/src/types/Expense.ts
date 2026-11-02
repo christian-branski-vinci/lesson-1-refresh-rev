@@ -1,5 +1,6 @@
 import * as z from "zod";
 import type { User } from "./user";
+import type { Category } from "./category";
 
 export interface Expense {
   id: number;
@@ -9,6 +10,8 @@ export interface Expense {
   payer: User;
   amount: number;
   participants: User[];
+  categoryId?: number;
+  category?:Category;
 }
 
 export const ExpenseFormSchema = z.object({
@@ -17,6 +20,7 @@ export const ExpenseFormSchema = z.object({
   amount: z.number().positive("Amount must be positive"),
   date: z.string().min(1, "Date is required"),
   participantsRaw: z.string(),
+  categoryId: z.number().int().optional(),
 });
 
 

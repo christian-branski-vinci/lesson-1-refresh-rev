@@ -1,30 +1,31 @@
-import type { Expense, NewExpense, ExpenseFilter } from "../types/Expense.ts";
+import { type Expense, type NewExpense, type ExpenseFilter, expenseFromDBO } from "../types/Expense.ts";
 import { db } from "../prisma/db.ts";
-import { populate } from "../seed.ts";
+import populate from "../seed.ts";
 import { Temporal } from "temporal-polyfill";
 
 export class ExpensesService {
   public static async getExpenses(filter: ExpenseFilter = {}): Promise<Expense[]> {
     try {
       let query = db.orm.public.Expense
-        .include("participants", (p) => p.include("user"))
-        .include("payer");
+        .include("participants")
+        .include("payer")
+        .include("category");
 
       if (filter.amount !== undefined) {
         const min = filter.amount;
         query = query.where((expense) => expense.amount.gte(min));
       }
 
+      if (filter.payerId !==undefined){
+        query = query.where({payerId: filter.payerId});
+      }
+
+      if (filter.categoryId !== undefined){
+        query = query.where({categoryId: filter.categoryId})
+      }
+
       const rows = await query.all();
-      return rows.map((row) => ({
-        id: row.id,
-        date: row.date.toString(),
-        amount: row.amount,
-        description: row.description,
-        payerId: row.payerId,
-        payer: row.payer,
-        participants: row.participants.map((p) => p.user),
-      }));
+      return rows.map(expenseFromDBO);
     } catch (error) {
       console.error("Error getting expenses:", error);
       throw error;
@@ -36,10 +37,10 @@ export class ExpensesService {
       const created = await db.orm.public.Expense.create({
         description: newExpense.description,
         amount: newExpense.amount,
-        date: Temporal.Instant.from(`${newExpense.date.slice(0, 10)}T00:00:00Z`),
+        date: Temporal.Instant.from(`${newExpense.date.slice(0, 10)}T00:00:00Z`).toString(),
         payerId: newExpense.payerId,
         participants: (mutator) =>
-          mutator.create(newExpense.participants.map((userId) => ({ userId }))),
+          mutator.connect(newExpense.participants.map((id) => ({ id }))),
       });
       if (!created) {
         throw new Error("Failed to create expense");
@@ -47,7 +48,7 @@ export class ExpensesService {
 
       const expense = await db.orm.public.Expense
         .where({ id: created.id })
-        .include("participants", (p) => p.include("user"))
+        .include("participants")
         .include("payer")
         .first();
 
@@ -58,7 +59,7 @@ export class ExpensesService {
         description: expense!.description,
         payerId: expense!.payerId,
         payer: expense!.payer,
-        participants: expense!.participants.map((p) => p.user),
+        participants: expense!.participants.map((p) => p),
       };
     } catch (error) {
       console.error("Error adding expense:", error);

@@ -2,6 +2,7 @@ import { useForm } from "react-hook-form";
 import { ExpenseFormSchema, type ExpenseFormValues, type newExpense } from "../types/Expense";
 import { zodResolver } from "@hookform/resolvers/zod";
 import useUsers from "../hooks/useUsers";
+import useCategories from "../hooks/useCategories";
 
 
 interface ExpenseItemProps {
@@ -15,6 +16,7 @@ function ExpenseAdd({ addExpense }: ExpenseItemProps) {
     });
     
     const { users, loading: usersLoading } = useUsers();
+    const { categories, loading: categoriesLoading } = useCategories();
 
     const onSubmit =async (data: ExpenseFormValues) => {
         const newExpense: newExpense={
@@ -55,6 +57,14 @@ function ExpenseAdd({ addExpense }: ExpenseItemProps) {
                 <input type="text" {...register("participantsRaw")} placeholder="particiapant ID's (separé par virgule)"/>
                 {errors.participantsRaw && <span>{errors.participantsRaw.message}</span>}
                 
+                <select {...register("categoryId", { setValueAs: (v) => v === "" ? undefined : parseInt(v, 10) })}>
+                    <option value="">No category</option>
+                    {!categoriesLoading && categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                </select>
+                {errors.categoryId && <span>{errors.categoryId.message}</span>}
+
                 <button type = "submit" className="btn btn-primary">Add</button>
             </form>
         </div>
