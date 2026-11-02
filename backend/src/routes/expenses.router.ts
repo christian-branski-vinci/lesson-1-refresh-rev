@@ -1,46 +1,49 @@
 import express from "express";
-import type { Expense } from "../types/Expense.ts";
+import { parseExpenseFilter, parseNewExpense } from "../types/Expense.ts";
 import { ExpensesService } from "../service/expenses.service.ts";
-import { isValidNewExpense } from "../guards/expenses.guard.ts";
+import { UserService } from "../service/user.service.ts";
 
 const expensesRouter = express.Router();
 
-expensesRouter.get("/",async (req, res) => {
-    try {
-        const expenses = await ExpensesService.getExpenses();
-        res.json(expenses);
-    } catch (error) {
-        res.status(500).json({ error: "Server Error" });
+expensesRouter.get("/", async (req, res) => {
+  try {
+    const filter = parseExpenseFilter(req.query);
+    if (filter === false) {
+      return res.status(400).json({ error: "filter invalid" });
     }
-})
-
-expensesRouter.post("/", async (req, res) => {
-    try {
-        const expense: Expense = req.body;
-         
-        console.log("Received body:", req.body);
-        if (!isValidNewExpense(req.body)) {
-            return res.status(400).json({ error: "Invalid expense data", received: req.body });
-        }
-        if (!isValidNewExpense(expense)) {
-            return res.status(400).json({ error: "Invalid expense data" });
-        }
-
-        const expenses = await ExpensesService.addExpense(expense);
-        res.status(201).json(expenses);
-    } catch (error) {
-        res.status(500).json({ error: "Server Error" });
-    }
+    const expenses = await ExpensesService.getExpenses(filter);
+    res.json(expenses);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Server Error" });
+  }
 });
 
-expensesRouter.post("/reset", (req, res)=> {
-    try {
-        const expenses = ExpensesService.resetExpenses();
-        res.status(201).json(expenses);
-    }catch(error){
-        res.status(500).json({error: "server Error"})
+expensesRouter.post("/", async (req, res) => {
+  try {
+    const newExpense = parseNewExpense(req.body);
+    if (newExpense === false) {
+      return res.status(400).json({ error: "invalid Expense" });
     }
-})
+    if (!(await UserService.getById(newExpense.payerId))) {
+      return res.status(404).json({ error: "payer id not found" });
+    }
+    const expense = await ExpensesService.addExpense(newExpense);
+    res.status(201).json(expense);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Server Error" });
+  }
+});
 
+expensesRouter.post("/reset", async (req, res) => {
+  try {
+    const expenses = await ExpensesService.resetExpenses();
+    res.status(201).json(expenses);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Server Error" });
+  }
+});
 
 export default expensesRouter;

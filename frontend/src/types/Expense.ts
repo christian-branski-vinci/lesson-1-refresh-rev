@@ -1,12 +1,14 @@
 import * as z from "zod";
+import type { User } from "./user";
 
 export interface Expense {
   id: number;
   date: string;
   description: string;
   payerId: number;
+  payer: User;
   amount: number;
-  participants: number[];
+  participants: User[];
 }
 
 export const ExpenseFormSchema = z.object({
@@ -17,6 +19,11 @@ export const ExpenseFormSchema = z.object({
   participantsRaw: z.string(),
 });
 
+
+
+
 export type ExpenseFormValues = z.infer<typeof ExpenseFormSchema>;
 
-export type newExpense = Omit<Expense, 'id'>;
+export type newExpense = Omit<Expense, 'id' |'payer' | 'participants' | 'category'> & {
+  participants: number[];
+};

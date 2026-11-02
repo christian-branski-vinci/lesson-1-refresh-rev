@@ -10,10 +10,38 @@ interface UseExpensesResult {
   error: string | null;
   addExpense: (expense: newExpense) => Promise<void>;
   resetExpenses: () => Promise<void>;
+  searchExpenses: (filter?: ExpenseFilter) => Promise<void>;
 }
 
+export interface ExpenseFilter {
+  amount?: number;
+  payerId?: number | string;
+}
 function errorMessage(error: unknown): string {
     return error instanceof Error ? error.message : 'Unknown error';
+}
+
+async function fetchAllExpenses(filter?: ExpenseFilter): Promise<Expense[]> {
+  let url = `${API_BASE_URL}/expenses`;
+  console.log("filter", filter);
+
+  if (filter) {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(filter)) {
+      if (value !== undefined && value !== null && value !== "") {
+        params.append(key, value.toString());
+      }
+    }
+    url += `?${params.toString()}`;
+  }
+  
+  return fetch(url)
+    .then((res) => res.json())
+    .then((data) => (Array.isArray(data) ? (data as Expense[]) : []))
+    .catch((error) => {
+      console.error("Error getting expenses:", error);
+      return [] as Expense[];
+    });
 }
 
 function useExpenses():UseExpensesResult{
@@ -82,8 +110,12 @@ function useExpenses():UseExpensesResult{
         },
         [fetchExpenses]
     )
+    const searchExpenses = useCallback(async (filter?: ExpenseFilter): Promise<void> => {
+        const results = await fetchAllExpenses(filter);
+        setExpenses(results);
+    }, []);
 
-    return {expenses, loading,error, addExpense, resetExpenses}
+    return {expenses, loading,error, addExpense, resetExpenses, searchExpenses}
 }
 
 export default useExpenses;

@@ -6,7 +6,16 @@ import contractJson from './contract.json' with { type: 'json' };
 
 export const contract = contractFromJson<Contract>(contractJson);
 
+
+
 export const db = postgres({
   contract,
   url: process.env['DATABASE_URL']!,
 });
+
+
+const originalClose = db.close.bind(db);
+db.close = async () => {
+  console.trace("db.close() appelé ici");
+  return originalClose();
+};

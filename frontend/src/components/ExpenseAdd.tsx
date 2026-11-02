@@ -1,6 +1,7 @@
 import { useForm } from "react-hook-form";
 import { ExpenseFormSchema, type ExpenseFormValues, type newExpense } from "../types/Expense";
 import { zodResolver } from "@hookform/resolvers/zod";
+import useUsers from "../hooks/useUsers";
 
 
 interface ExpenseItemProps {
@@ -12,6 +13,8 @@ function ExpenseAdd({ addExpense }: ExpenseItemProps) {
     const {register, handleSubmit, reset, formState: { errors },} = useForm<ExpenseFormValues>({
         resolver: zodResolver(ExpenseFormSchema),
     });
+    
+    const { users, loading: usersLoading } = useUsers();
 
     const onSubmit =async (data: ExpenseFormValues) => {
         const newExpense: newExpense={
@@ -35,7 +38,12 @@ function ExpenseAdd({ addExpense }: ExpenseItemProps) {
                 <input type="text" {...register("description")} placeholder="Description"/>
                 {errors.description && <span>{errors.description.message}</span>}
 
-                <input type="number" {...register("payerId", {valueAsNumber : true})} placeholder="Payer Id" />
+                <select {...register("payerId", {valueAsNumber : true})}> 
+                    <option value="">Select payer</option>
+                    {!usersLoading && users.map((user)=>(
+                        <option key={user.id} value={user.id}>{user.name}</option>
+                    ))}
+                </select>
                 {errors.payerId && <span>{errors.payerId.message}</span>}
 
                 <input type="number" step="0.01" {...register("amount", { valueAsNumber: true })} placeholder="Amount" />
