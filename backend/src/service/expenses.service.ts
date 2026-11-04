@@ -1,15 +1,21 @@
 import { type Expense, type NewExpense, type ExpenseFilter, expenseFromDBO } from "../types/Expense.ts";
 import { db } from "../prisma/db.ts";
 import populate from "../seed.ts";
-import { Temporal } from "temporal-polyfill";
+
+
+function expenseQuery() {
+  return db.orm.public.Expense
+    // `participants` is a many-to-many relation. Prisma walks the join table
+    // (`participations`) for us, so we get users back, not join rows.
+    .include("participants")
+    .include("payer")
+    .include("category");
+}import { Temporal } from "temporal-polyfill";
 
 export class ExpensesService {
   public static async getExpenses(filter: ExpenseFilter = {}): Promise<Expense[]> {
     try {
-      let query = db.orm.public.Expense
-        .include("participants")
-        .include("payer")
-        .include("category");
+      let query = expenseQuery();
 
       if (filter.amount !== undefined) {
         const min = filter.amount;
@@ -31,6 +37,11 @@ export class ExpensesService {
       throw error;
     }
   }
+
+  public static async getExpenseById(id: number): Promise<Expense | undefined> {
+  const row = await expenseQuery().where({ id }).first();
+  return row ? expenseFromDBO(row) : undefined;
+}
 
   public static async addExpense(newExpense: NewExpense): Promise<Expense> {
     try {

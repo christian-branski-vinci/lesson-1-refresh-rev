@@ -1,17 +1,30 @@
 import * as z from "zod";
-import type { User } from "./user";
-import type { Category } from "./category";
 
+import { type User } from "./user.ts";
+import { type Category } from "./category.ts";
+
+/** The full expense, as the detail page asks for it. */
 export interface Expense {
   id: number;
   date: string;
   description: string;
-  payerId: number;
-  payer: User;
   amount: number;
+  payer: User;
   participants: User[];
-  categoryId?: number;
-  category?:Category;
+  category?: Category;
+}
+
+/**
+ * What the list page asks for. It is a strict subset of `Expense` — the list
+ * query simply does not select the other fields, so the types say so too.
+ */
+export interface ExpenseListItem {
+  id: number;
+  date: string;
+  description: string;
+  amount: number;
+  payer: Pick<User, "name">;
+  category?: Category;
 }
 
 export const ExpenseFormSchema = z.object({
@@ -23,11 +36,14 @@ export const ExpenseFormSchema = z.object({
   categoryId: z.number().int().optional(),
 });
 
-
-
-
 export type ExpenseFormValues = z.infer<typeof ExpenseFormSchema>;
 
-export type newExpense = Omit<Expense, 'id' |'payer' | 'participants' | 'category'> & {
+// What we send to the API: participants are IDs, payer/category are resolved server-side.
+export interface NewExpense {
+  description: string;
+  amount: number;
+  date: string;
+  payerId: number;
   participants: number[];
-};
+  categoryId?: number;
+}

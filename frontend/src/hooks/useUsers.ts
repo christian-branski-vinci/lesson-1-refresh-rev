@@ -1,25 +1,19 @@
 import { useEffect, useState } from "react";
 import type { User } from "../types/user";
+import { apiRequest } from "../lib/rest";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api';
 
-async function fetchAllUsers(): Promise<User[]> {
-    return fetch(`${API_BASE_URL}/users`)
-        .then((res)=> res.json())
-        .then((data)=> (Array.isArray(data)? (data as User[]): []))
-        .catch((error)=>{
-            console.error("Error getting users:", error);
-            return [] as User[];
-        })
-}
+
+
 
 function useUsers(){
     const [users, setUsers]= useState<User[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(()=>{
-        fetchAllUsers()
+        apiRequest<User[]>("/api/users")
             .then(setUsers)
+            .catch((error)=>console.error("error:", error))
             .finally(()=> setLoading(false));
     }, []);
 

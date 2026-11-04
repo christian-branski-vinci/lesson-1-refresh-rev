@@ -28,6 +28,22 @@ expensesRouter.get("/", async (req, res) => {
   }
 });
 
+expensesRouter.get('/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid id' });
+    }
+    const expense = await ExpensesService.getExpenseById(id);
+    if (!expense) {
+      return res.status(404).json({ error: 'Expense not found' });
+    }
+    res.json(expense);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 expensesRouter.post("/", async (req, res) => {
   try {
     const newExpense = parseNewExpense(req.body);
