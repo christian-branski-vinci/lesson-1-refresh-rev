@@ -26,6 +26,7 @@ export interface UserDBO {
   name: string;
   email: string;
   bankAccount: string | null;
+  
 }
 
 export function userFromDBO(dbo: UserDBO): User {

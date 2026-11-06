@@ -1,4 +1,5 @@
 import { db } from "../src/prisma/db.ts";
+import bcrypt from 'bcrypt';
 
 const categories = [
   { id: 1, name: "Groceries", colour: "#16a34a" },
@@ -77,7 +78,9 @@ async function populate() {
   await db.orm.public.Category.createAll(categories);
 
   console.log("Creating users...");
-  await db.orm.public.User.createAll(users);
+  const DEMO_PASSWORD = 'topsecret';
+  const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
+  await db.orm.public.User.createAll(users.map((user) => ({ ...user, passwordHash })));
 
   console.log("Creating expenses...");
   for (const { participants, ...expense } of expenses) {

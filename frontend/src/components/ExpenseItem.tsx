@@ -11,9 +11,9 @@ interface ExpenseItemProps {
 
 function ExpenseItem({ expense }: ExpenseItemProps) {
    return (
-    <div style={{border: '1px solid black', padding: '10px', marginBottom: '10px'}}>
+     <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-white p-4 hover:border-slate-300">
       <h3>
-          <Link to={`/expenses/${expense.id}`}>{expense.description}</Link>
+          <Link to={`/expenses/${expense.id}`} className="font-medium text-indigo-600 hover:underline">{expense.description}</Link>
       </h3>
       <p>Date: {new Date(expense.date).toLocaleDateString()}</p>
       <p>Description: {expense.description}</p>

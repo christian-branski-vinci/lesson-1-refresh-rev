@@ -10,6 +10,7 @@ model User {
   participatedExpenses Expense[]  @relation("ParticipantExpenses")
   transfersOut         Transfer[] @relation("UserTransfersSource")
   transfersIn          Transfer[] @relation("UserTransfersTarget")
+  passwordHash String
 
   @@map("user")
 }
@@ -24,6 +25,7 @@ model Expense {
   participants User[]            @relation("ParticipantExpenses")
   categoryId Int?
   category   Category? @relation(fields: [categoryId], references: [id])
+  
 
   @@map("expense")
 }

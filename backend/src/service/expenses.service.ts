@@ -87,4 +87,16 @@ export class ExpensesService {
       throw error;
     }
   }
+
+  public static async getExpensesOfUser(
+    userId: number,
+    filter: ExpenseFilter = {}
+  ): Promise<Expense[]> {
+    const all = await ExpensesService.getExpenses(filter);
+    return all.filter(
+    (expense) =>
+      expense.payerId === userId ||
+      expense.participants.some((participant) => participant.id === userId)
+  );
+}
 }

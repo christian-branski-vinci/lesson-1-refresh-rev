@@ -4,7 +4,8 @@ import { type Expense, parseNewExpense } from "../types/Expense.ts";
 import { ExpensesService } from "../service/expenses.service.ts";
 import { CategoriesService } from "../service/categories.service.ts";
 import { UserService } from "../service/user.service.ts";
-
+import {type GraphQLContext } from "../types/GraphQLContext.ts";
+import { requireAuth } from './authHelpers.ts';
 
 
 /**
@@ -14,7 +15,7 @@ import { UserService } from "../service/user.service.ts";
  * shape needs its own route and its own mapping. Here the schema says what
  * *can* be asked, and each client picks the fields it wants.
  */
-export const schema = createSchema({
+export const schema = createSchema<GraphQLContext>({
   typeDefs: /* GraphQL */ `
     type User {
       id: Int!
@@ -22,6 +23,7 @@ export const schema = createSchema({
       email: String!
       # Nullable on purpose: not every user has given us a bank account.
       bankAccount: String
+      expenses(filter: ExpenseFilter): [Expense!]!
     }
 
     type Category {
@@ -47,6 +49,7 @@ export const schema = createSchema({
     }
 
     type Query {
+      me: User
       expenses(filter: ExpenseFilter): [Expense!]!
       expense(id: Int!): Expense
       users: [User!]!
@@ -75,25 +78,64 @@ export const schema = createSchema({
       date: (expense: Expense) => expense.date.toString(),
     },
     Query: {
-      expenses: (_parent, args) => ExpensesService.getExpenses(args.filter ?? {}),
-      expense: (_parent, args) => ExpensesService.getExpenseById(args.id),
-      users: () => UserService.getUsers(),
-      categories: () => CategoriesService.getCategories(),
+      expenses: (_parent, args, ctx) => {
+        requireAuth(ctx);
+        return ExpensesService.getExpenses(args.filter ?? {});
+      },
+      expense: async (_parent, args, ctx) => {
+        const user = requireAuth(ctx);
+
+        const expense = await ExpensesService.getExpenseById(args.id);
+
+        if (!expense) {
+          throw new GraphQLError('Expense not found', {
+            extensions: { code: 'NOT_FOUND' },
+          });
+        }
+
+        // Check if user is involved in this expense (as payer or participant)
+        const isInvolved =
+          expense.payer?.id === user.userId ||
+          expense.participants.some(p => p.id === user.userId);
+
+        if (!isInvolved) {
+          throw new GraphQLError("You don't have permission to view this expense", {
+            extensions: { code: 'FORBIDDEN' },
+          });
+        }
+
+        return expense;
+      },
+
+      // Same question, same answer. `users` hands out names, emails and bank
+      // accounts; `categories` is harmless, but a stranger has no business
+      // enumerating either.
+      users: (_parent, _args, ctx) => {
+        requireAuth(ctx);
+        return UserService.getUsers();
+      },
+      categories: (_parent, _args, ctx) => {
+        requireAuth(ctx);
+        return CategoriesService.getCategories();
+      },
     },
     Mutation: {
-      createExpense: (_parent, args) => {
-        // GraphQL checked the *shape* of the arguments: `date` is a String.
-        // It did not check that the string is a date, that the amount is
-        // positive, or that the description fits in 200 characters — those are
-        // business rules, and they live in the same Zod schema the REST route
-        // uses. Parsing here also turns `date` into a real Date, which is what
-        // the service expects.
+      createExpense: async (_parent, args, ctx) => {
+        const user = requireAuth(ctx);
+
+        // User can only create expenses where they are the payer
+        if (user.userId !== args.input.payerId) {
+          throw new GraphQLError('You can only create expenses that you paid for', {
+            extensions: { code: 'FORBIDDEN' },
+          });
+        }
+
         const newExpense = parseNewExpense(args.input);
         if (newExpense === false) {
-          throw new GraphQLError("Invalid expense");
+          throw new GraphQLError('Invalid expense');
         }
         return ExpensesService.addExpense(newExpense);
       },
     },
   },
-})
+});

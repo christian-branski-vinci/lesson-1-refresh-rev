@@ -1,20 +1,18 @@
-import type { LoaderFunctionArgs } from 'react-router';
+import { redirect, type LoaderFunctionArgs } from 'react-router';
 import type { ExpenseListItem } from '../../types/Expense';
 import { graphqlRequest } from '../../lib/graphql';
+import { clearToken } from "../../lib/token.ts";
 
 const EXPENSES_QUERY = /* GraphQL */ `
-  query Expenses($filter: ExpenseFilter) {
-    expenses(filter: $filter) {
-      id
-      description
-      amount
-      date
-      payer {
-        name
-      }
-      category {
-        name
-        colour
+  query MyExpenses($filter: ExpenseFilter) {
+    me {
+      expenses(filter: $filter) {
+        id
+        description
+        amount
+        date
+        payer { name }
+        category { name colour }
       }
     }
   }
@@ -29,6 +27,19 @@ export async function expenseListLoader({ request }: LoaderFunctionArgs): Promis
     categoryId: params.get('categoryId') ? Number(params.get('categoryId')) : undefined,
   };
 
-  const data = await graphqlRequest<{ expenses: ExpenseListItem[] }>(EXPENSES_QUERY, { filter });
-  return data.expenses;
+  const data = await graphqlRequest<{ me: { expenses: ExpenseListItem[] } | null }>(
+    EXPENSES_QUERY,
+    { filter }
+  );
+
+  // `me` answers null for an anonymous caller — and a caller whose token no
+  // longer verifies *is* anonymous, as far as the server is concerned. The
+  // route middleware only checked that a token existed; this is where we learn
+  // it was not a good one.
+  if (!data.me) {
+    clearToken();
+    throw redirect("/login");
+  }
+
+  return data.me.expenses;
 }

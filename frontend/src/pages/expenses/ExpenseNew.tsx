@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router";
-import type { NewExpense } from "../../types/Expense";
-import ExpenseAdd from "../../components/ExpenseAdd";
+import ExpenseAdd, { type NewExpenseFormOutput } from "../../components/ExpenseAdd";
 import { graphqlRequest } from "../../lib/graphql";
+import { useAuth } from "../../contexts/AuthContext";
 
 
 const CREATE_EXPENSE = /* GraphQL */ `
@@ -13,16 +13,19 @@ const CREATE_EXPENSE = /* GraphQL */ `
 `;
 
 
-function ExpenseNew() {
-    const navigate = useNavigate();
 
-    const createExpense = async(expense: NewExpense) => {
-        await graphqlRequest(CREATE_EXPENSE, {input: expense});
-        navigate("/expenses");
-    }
-    return(
-    <ExpenseAdd addExpense={createExpense}/>
-    )
+function ExpenseNew() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const createExpense = async (expense: NewExpenseFormOutput) => {
+    await graphqlRequest(CREATE_EXPENSE, {
+      input: { ...expense, payerId: user!.id },
+    });
+    navigate("/expenses");
+  };
+
+  return <ExpenseAdd expenseAdd={createExpense} />;
 }
 
 export default ExpenseNew;
